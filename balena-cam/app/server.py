@@ -1,4 +1,6 @@
 import asyncio, json, os, cv2, platform, sys
+from websocket import create_connection
+import base64
 from time import sleep
 from aiohttp import web
 from av import VideoFrame
@@ -12,8 +14,8 @@ class CameraDevice():
         if not ret:
             print('Failed to open default camera. Exiting...')
             sys.exit()
-        self.cap.set(3, 640)
-        self.cap.set(4, 480)
+        self.cap.set(3, 96)
+        self.cap.set(4, 96)
 
     def rotate(self, frame):
         if flip:
@@ -32,7 +34,8 @@ class CameraDevice():
         encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
         frame = await self.get_latest_frame()
         frame, encimg = cv2.imencode('.jpg', frame, encode_param)
-        return encimg.tostring()
+        jpg_base64 = base64.b64encode(encimg) # save img as base64 to send over websocket
+        return (jpg_base64, encimg.tostring())
 
 class PeerConnectionFactory():
     def __init__(self):
@@ -141,7 +144,11 @@ async def mjpeg_handler(request):
     })
     await response.prepare(request)
     while True:
-        data = await camera_device.get_jpeg_frame()
+        (jpg_base64, data) = await camera_device.get_jpeg_frame()
+        print("Sending to classifier")
+        ws.send(jpg_base64)
+        classification=ws.recv()
+        print(classification)
         await asyncio.sleep(0.2) # this means that the maximum FPS is 5
         await response.write(
             '--{}\r\n'.format(boundary).encode('utf-8'))
@@ -162,6 +169,7 @@ async def config(request):
 async def on_shutdown(app):
     # close peer connections
     coros = [pc.close() for pc in pcs]
+    ws.close()
     await asyncio.gather(*coros)
 
 def checkDeviceReadiness():
@@ -172,7 +180,7 @@ def checkDeviceReadiness():
         sleep(1)
         sys.exit()
     else:
-        print('Video device is ready')
+        print('Video device is readyyyy')
 
 if __name__ == '__main__':
     checkDeviceReadiness()
@@ -205,6 +213,9 @@ if __name__ == '__main__':
     
     # Factory to create peerConnections depending on the iceServers set by user
     pc_factory = PeerConnectionFactory()
+
+    # Connect to websocket server for image classification
+    ws = create_connection("ws://192.168.0.29:8080")
 
     app = web.Application(middlewares=auth)
     app.on_shutdown.append(on_shutdown)
