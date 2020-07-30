@@ -215,7 +215,7 @@ if __name__ == '__main__':
     pc_factory = PeerConnectionFactory()
 
     # Connect to websocket server for image classification
-    ws = create_connection("ws://192.168.0.29:8080")
+    ws = create_connection("ws://edgeimpulse-inference:8080")
 
     app = web.Application(middlewares=auth)
     app.on_shutdown.append(on_shutdown)

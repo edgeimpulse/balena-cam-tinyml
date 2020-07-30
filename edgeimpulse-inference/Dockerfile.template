@@ -1,0 +1,19 @@
+FROM balenalib/%%BALENA-MACHINE-NAME%%-node:build
+
+# Install build tools and remove layer cache afterwards
+#RUN install_packages git python make gcc g++ libvips-dev
+
+EXPOSE 8080
+
+# Switch to working directory for our app
+WORKDIR /usr/src/app
+
+# Copy all the source code in.
+COPY ./app/ /usr/src/app/
+
+# Install sharp package for image manipulation
+RUN npm install sharp
+RUN npm install ws
+
+# Launch our binary on container startup.
+CMD ["node", "/usr/src/app/classify-image.js"]
