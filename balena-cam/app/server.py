@@ -7,8 +7,6 @@ from av import VideoFrame
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCIceServer, RTCConfiguration
 from aiohttp_basicauth import BasicAuthMiddleware
 
-cl_results = "{}"
-
 class CameraDevice():
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
@@ -30,14 +28,28 @@ class CameraDevice():
     async def get_latest_frame(self):
         ret, frame = self.cap.read()
         await asyncio.sleep(0)
-        return self.rotate(frame)
+
+        # save jpg as base64 for classification
+        frame = self.rotate(frame)
+        encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
+        _frame, encimg = cv2.imencode('.jpg', frame, encode_param)
+        global jpg_base64
+        jpg_base64 = base64.b64encode(encimg) # save img as base64 to send over websocket
+
+        return frame
 
     async def get_jpeg_frame(self):
+        ret, frame = self.cap.read()
+        await asyncio.sleep(0)
+
+        # save jpg as base64 for classification
+        frame = self.rotate(frame)
         encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
-        frame = await self.get_latest_frame()
         frame, encimg = cv2.imencode('.jpg', frame, encode_param)
+        global jpg_base64
         jpg_base64 = base64.b64encode(encimg) # save img as base64 to send over websocket
-        return (jpg_base64, encimg.tostring())
+        
+        return encimg.tostring()
 
 class PeerConnectionFactory():
     def __init__(self):
@@ -114,7 +126,13 @@ async def favicon(request):
     return web.FileResponse(os.path.join(ROOT, 'client/favicon.png'))
 
 async def classification(request):
-    print("Sending cl_results to client")
+    cl_results = "{}"
+    if jpg_base64 != "":
+        print("Sending to classifier")
+        ws.send(jpg_base64)
+        cl_results=ws.recv()
+        print(cl_results)
+        print("Sending cl_results to client")
     return web.Response(content_type='application/json', text=cl_results)
 
 async def offer(request):
@@ -150,12 +168,12 @@ async def mjpeg_handler(request):
     })
     await response.prepare(request)
     while True:
-        (jpg_base64, data) = await camera_device.get_jpeg_frame()
-        print("Sending to classifier")
-        ws.send(jpg_base64)
-        global cl_results
-        cl_results=ws.recv()
-        print(cl_results)
+        data = await camera_device.get_jpeg_frame()
+        # print("Sending to classifier")
+        # ws.send(jpg_base64)
+        # global cl_results
+        # cl_results=ws.recv()
+        # print(cl_results)
         await asyncio.sleep(0.2) # this means that the maximum FPS is 5
         await response.write(
             '--{}\r\n'.format(boundary).encode('utf-8'))
@@ -195,6 +213,7 @@ if __name__ == '__main__':
     ROOT = os.path.dirname(__file__)
     pcs = set()
     camera_device = CameraDevice()
+    jpg_base64 = ""
 
     flip = False
     try:
