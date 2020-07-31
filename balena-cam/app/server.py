@@ -7,6 +7,8 @@ from av import VideoFrame
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCIceServer, RTCConfiguration
 from aiohttp_basicauth import BasicAuthMiddleware
 
+cl_results = "{}"
+
 class CameraDevice():
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
@@ -111,6 +113,10 @@ async def balena_logo(request):
 async def favicon(request):
     return web.FileResponse(os.path.join(ROOT, 'client/favicon.png'))
 
+async def classification(request):
+    print("Sending cl_results to client")
+    return web.Response(content_type='application/json', text=cl_results)
+
 async def offer(request):
     params = await request.json()
     offer = RTCSessionDescription(
@@ -147,8 +153,9 @@ async def mjpeg_handler(request):
         (jpg_base64, data) = await camera_device.get_jpeg_frame()
         print("Sending to classifier")
         ws.send(jpg_base64)
-        classification=ws.recv()
-        print(classification)
+        global cl_results
+        cl_results=ws.recv()
+        print(cl_results)
         await asyncio.sleep(0.2) # this means that the maximum FPS is 5
         await response.write(
             '--{}\r\n'.format(boundary).encode('utf-8'))
@@ -180,7 +187,7 @@ def checkDeviceReadiness():
         sleep(1)
         sys.exit()
     else:
-        print('Video device is readyyyy')
+        print('Video device is ready')
 
 if __name__ == '__main__':
     checkDeviceReadiness()
@@ -228,4 +235,5 @@ if __name__ == '__main__':
     app.router.add_post('/offer', offer)
     app.router.add_get('/mjpeg', mjpeg_handler)
     app.router.add_get('/ice-config', config)
+    app.router.add_get('/classification', classification)
     web.run_app(app, port=80)

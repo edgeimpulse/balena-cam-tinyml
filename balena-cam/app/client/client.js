@@ -295,3 +295,34 @@ if (window.navigator.userAgent.indexOf("Edge") > -1  || safariOnIos) {
     startMJPEG();
   });
 }
+
+
+async function getClassification() {
+  let response = await fetch("/classification");
+  console.log("fetching");
+
+  if (response.status == 502) {
+    // Status 502 is a connection timeout error,
+    // may happen when the connection was pending for too long,
+    // and the remote server or a proxy closed it
+    // let's reconnect
+    await subscribe();
+  } else if (response.status != 200) {
+    // An error - let's show it
+    console.log(response.statusText);
+    // Reconnect in 2 second
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await subscribe();
+  } else {
+    // Display classification
+    let message = await response.text();
+    console.log(message);
+    document.getElementById('classification').textContent = message;
+    
+    // Call subscribe() again to get the next message after 1 second
+    await new Promise(r => setTimeout(r, 1000));
+    await subscribe();
+  }
+}
+
+getClassification();
