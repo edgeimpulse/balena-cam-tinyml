@@ -14,8 +14,8 @@ class CameraDevice():
         if not ret:
             print('Failed to open default camera. Exiting...')
             sys.exit()
-        self.cap.set(3, 96)
-        self.cap.set(4, 96)
+        self.cap.set(3, 640)
+        self.cap.set(4, 640)
 
     def rotate(self, frame):
         if flip:
@@ -24,30 +24,33 @@ class CameraDevice():
             M = cv2.getRotationMatrix2D(center, 180, 1.0)
             frame = cv2.warpAffine(frame, M, (w, h))
         return frame
+    
+    # resize and save frame as base64 for classification
+    def base64_img(self, frame):
+        encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
+        global jpg_base64
+        jpg_base64 = cv2.resize(frame, (96, 96), interpolation = cv2.INTER_AREA)
+        _frame, jpg_base64 = cv2.imencode('.jpg', jpg_base64, encode_param)
+        jpg_base64 = base64.b64encode(jpg_base64) # save img as base64 to send over websocket
 
     async def get_latest_frame(self):
         ret, frame = self.cap.read()
         await asyncio.sleep(0)
-
-        # save jpg as base64 for classification
         frame = self.rotate(frame)
-        encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
-        _frame, encimg = cv2.imencode('.jpg', frame, encode_param)
-        global jpg_base64
-        jpg_base64 = base64.b64encode(encimg) # save img as base64 to send over websocket
+
+        self.base64_img(frame) 
 
         return frame
 
     async def get_jpeg_frame(self):
         ret, frame = self.cap.read()
         await asyncio.sleep(0)
-
-        # save jpg as base64 for classification
         frame = self.rotate(frame)
+
+        self.base64_img(frame)
+
         encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
         frame, encimg = cv2.imencode('.jpg', frame, encode_param)
-        global jpg_base64
-        jpg_base64 = base64.b64encode(encimg) # save img as base64 to send over websocket
         
         return encimg.tostring()
 
