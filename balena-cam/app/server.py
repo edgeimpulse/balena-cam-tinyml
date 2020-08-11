@@ -1,4 +1,6 @@
 import asyncio, json, os, cv2, platform, sys
+from websocket import create_connection
+import base64
 from time import sleep
 from aiohttp import web
 from av import VideoFrame
@@ -13,7 +15,7 @@ class CameraDevice():
             print('Failed to open default camera. Exiting...')
             sys.exit()
         self.cap.set(3, 640)
-        self.cap.set(4, 480)
+        self.cap.set(4, 640)
 
     def rotate(self, frame):
         if flip:
@@ -22,16 +24,34 @@ class CameraDevice():
             M = cv2.getRotationMatrix2D(center, 180, 1.0)
             frame = cv2.warpAffine(frame, M, (w, h))
         return frame
+    
+    # resize and save frame as base64 for classification
+    def base64_img(self, frame):
+        encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
+        global jpg_base64
+        jpg_base64 = cv2.resize(frame, (96, 96), interpolation = cv2.INTER_AREA)
+        _frame, jpg_base64 = cv2.imencode('.jpg', jpg_base64, encode_param)
+        jpg_base64 = base64.b64encode(jpg_base64) # save img as base64 to send over websocket
 
     async def get_latest_frame(self):
         ret, frame = self.cap.read()
         await asyncio.sleep(0)
-        return self.rotate(frame)
+        frame = self.rotate(frame)
+
+        self.base64_img(frame) 
+
+        return frame
 
     async def get_jpeg_frame(self):
+        ret, frame = self.cap.read()
+        await asyncio.sleep(0)
+        frame = self.rotate(frame)
+
+        self.base64_img(frame)
+
         encode_param = (int(cv2.IMWRITE_JPEG_QUALITY), 90)
-        frame = await self.get_latest_frame()
         frame, encimg = cv2.imencode('.jpg', frame, encode_param)
+        
         return encimg.tostring()
 
 class PeerConnectionFactory():
@@ -105,8 +125,22 @@ async def balena_logo(request):
     content = open(os.path.join(ROOT, 'client/balena-logo.svg'), 'r').read()
     return web.Response(content_type='image/svg+xml', text=content)
 
+async def edgeimpulse_logo(request):
+    content = open(os.path.join(ROOT, 'client/edgeimpulse-logo.svg'), 'r').read()
+    return web.Response(content_type='image/svg+xml', text=content)
+
 async def favicon(request):
     return web.FileResponse(os.path.join(ROOT, 'client/favicon.png'))
+
+async def classification(request):
+    cl_results = "{}"
+    if jpg_base64 != "":
+        print("Sending to classifier")
+        ws.send(jpg_base64)
+        cl_results=ws.recv()
+        print(cl_results)
+        print("Sending cl_results to client")
+    return web.Response(content_type='application/json', text=cl_results)
 
 async def offer(request):
     params = await request.json()
@@ -142,6 +176,11 @@ async def mjpeg_handler(request):
     await response.prepare(request)
     while True:
         data = await camera_device.get_jpeg_frame()
+        # print("Sending to classifier")
+        # ws.send(jpg_base64)
+        # global cl_results
+        # cl_results=ws.recv()
+        # print(cl_results)
         await asyncio.sleep(0.2) # this means that the maximum FPS is 5
         await response.write(
             '--{}\r\n'.format(boundary).encode('utf-8'))
@@ -162,6 +201,7 @@ async def config(request):
 async def on_shutdown(app):
     # close peer connections
     coros = [pc.close() for pc in pcs]
+    ws.close()
     await asyncio.gather(*coros)
 
 def checkDeviceReadiness():
@@ -180,6 +220,7 @@ if __name__ == '__main__':
     ROOT = os.path.dirname(__file__)
     pcs = set()
     camera_device = CameraDevice()
+    jpg_base64 = ""
 
     flip = False
     try:
@@ -206,15 +247,20 @@ if __name__ == '__main__':
     # Factory to create peerConnections depending on the iceServers set by user
     pc_factory = PeerConnectionFactory()
 
+    # Connect to websocket server for image classification
+    ws = create_connection("ws://edgeimpulse-inference:8080")
+
     app = web.Application(middlewares=auth)
     app.on_shutdown.append(on_shutdown)
     app.router.add_get('/', index)
     app.router.add_get('/favicon.png', favicon)
     app.router.add_get('/balena-logo.svg', balena_logo)
+    app.router.add_get('/edgeimpulse-logo.svg', edgeimpulse_logo)
     app.router.add_get('/balena-cam.svg', balena)
     app.router.add_get('/client.js', javascript)
     app.router.add_get('/style.css', stylesheet)
     app.router.add_post('/offer', offer)
     app.router.add_get('/mjpeg', mjpeg_handler)
     app.router.add_get('/ice-config', config)
+    app.router.add_get('/classification', classification)
     web.run_app(app, port=80)

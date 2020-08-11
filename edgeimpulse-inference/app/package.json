@@ -1,0 +1,24 @@
+{
+  "name": "edgeimpulse-inference-wasm",
+  "version": "1.0.0",
+  "description": "Run inference on image received through a websocket",
+  "main": "classify-image.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prestart": "sh ./downloadWasm.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aureleq/wasm-image-classification.git"
+  },
+  "author": "Aurelien Lequertier",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aureleq/wasm-image-classification/issues"
+  },
+  "homepage": "https://github.com/aureleq/wasm-image-classification#readme",
+  "dependencies": {
+    "sharp": "^0.25.4",
+    "ws": "^7.3.1"
+  }
+}

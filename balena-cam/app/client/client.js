@@ -295,3 +295,37 @@ if (window.navigator.userAgent.indexOf("Edge") > -1  || safariOnIos) {
     startMJPEG();
   });
 }
+
+
+async function getClassification() {
+  let response = await fetch("/classification");
+  console.log("fetching");
+
+  if (response.status == 502) {
+    await getClassification();
+  } else if (response.status != 200) {
+    console.log(response.statusText);
+    // Reconnect in 2 second
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await getClassification();
+  } else {
+    // Display classification
+    let message = await response.json();
+    console.log(message);
+    if (JSON.stringify(message) != "{}") {
+      clContent = '<pre><table><th>label</th><th>value</th>';
+      for (var label of message["results"]) {
+        clContent += '<tr><td>' + label["label"] + '</td><td>' + label["value"] + '</td></tr>';
+      }
+      clContent += '</table>';
+      clContent += 'Anomaly level: ' + message["anomaly"] + '</pre>';
+      document.getElementById('classification').innerHTML = clContent;
+    }
+    
+    // Call subscribe() again to get the next message after 1 second
+    await new Promise(r => setTimeout(r, 1000));
+    await getClassification();
+  }
+}
+
+getClassification();

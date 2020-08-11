@@ -1,9 +1,15 @@
 version: '2'
 services:
+        edgeimpulse-inference:
+                build: ./edgeimpulse-inference
+                restart: always 
         balena-cam:
                 build: ./balena-cam
                 privileged: true
                 restart: always
-                network_mode: "host"
+                depends_on:
+                        - edgeimpulse-inference
+                ports:
+                        - "80"
                 labels:
                         io.balena.features.kernel-modules: '1'
