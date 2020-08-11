@@ -4,7 +4,8 @@
   "description": "Run inference on image received through a websocket",
   "main": "classify-image.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prestart": "sh ./downloadWasm.sh"
   },
   "repository": {
     "type": "git",
