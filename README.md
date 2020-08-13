@@ -4,6 +4,8 @@ This guide will help you deploy an image classification system running on a Rasp
 
 ## Overview
 
+![Shoes](images/shoes.gif)
+
 This project is based on the great [BalenaCam project](https://github.com/balenalabs/balena-cam) to live stream your camera's feed by running a webapp in a container. For our application we leverage the multi-containers feature of Balena by adding a second container running Edge Impulse webassembly inference engine inside a Node.js server. The 2 containers communicate with each other through a websocket. The `balena-cam` webapp has been modified to call the inference engine every second and display the results on the webpage.
 
 ## Requirements
@@ -81,40 +83,37 @@ You can download the WebAssembly on your computer though the library will be aut
 
 ## Creating your BalenaCloud project
 
-Click on the following link to deploy the application in your Balena account:
+Click on the following link to deploy the application to your Balena account:
 
 [![](https://balena.io/deploy.png)](https://dashboard.balena-cloud.com/deploy)
 
+Once your application has been deployed, click on *Service variable* and add the two following variables to the *edgeimpulse-inference* service:
+* EI_API_KEY
+* EI_PROJECT_ID
 
-### Password Protect your balenaCam device
+You can get the Project ID value in your Edge Impulse's project dashboard. The API Key is in the *Keys* subsection of the dashboard. Make sure to copy the whole API Key value (68 characters long).
 
-To protect your balenaCam devices using a username and a password set the following environment variables.
+![Service variables](images/09servicevar.png)
 
-| Key            | Value
-|----------------|---------------------------
-|**`username`**  | **`yourUserNameGoesHere`**
-|**`password`**  | **`yourPasswordGoesHere`**
+Finally select the *Devices* section and add your device. Select the *Development* version if you wish to run local tests easily. Don't forget to fill up your wifi network credentials if needed:
 
-💡 **Tips:** 💡 
-* You can set them as [fleet environment variables](https://www.balena.io/docs/learn/manage/serv-vars/#fleet-environment-and-service-variables) and every new balenaCam device you add will be password protected.
-* You can set them as [device environment variables](https://www.balena.io/docs/learn/manage/serv-vars/#device-environment-and-service-variables) and the username and password will be different on each device.
+![Add device to Balena](images/10devicebalena.png)
 
-### Optional Settings
+Follow the instructions to copy the Balena OS to the SD card of your device.
+Turn on the Raspberry and your device should appear in the Balena dashboard and reboot to load containers. You should see containers' logs as below:
 
-- To rotate the camera feed by 180 degrees, add a **device variable**: `rotation` = `1` (More information about this on the [docs](https://www.balena.io/docs/learn/manage/serv-vars/)).
-- To suppress any warnings, add a **device variable**: `PYTHONWARNINGS` = `ignore`
+![Containers' logs](images/11logs.png)
 
-### TURN server configuration
+## Testing our classifier
 
+Open your web browser and enter your device's local IP. You can also enable public URL as shown in the screenshot above.
 
-If you have access to a TURN server and you want your balenaCam devices to use it. You can easily configure it using the following environment variables. When you set them all the app will use that TURN server as a fallback mechanism when a direct WebRTC connection is not possible.
+The camera feed should be displayed on the webpage. If you notice slow framerate, probably your web browser doesn't support WebRTC and your client has switched to MJPEG. You can check next section to debug WebRTC.
 
-| Key            | Value
-|----------------|---------------------------
-|**`STUN_SERVER`**  | **`stun:stun.l.google.com:19302`**
-|**`TURN_SERVER`**  | **`turn:<yourTURNserverIP>:<yourTURNserverPORT>`**
-|**`TURN_USERNAME`**  | **`<yourTURNserverUsername>`**
-|**`TURN_PASSWORD`**  | **`yourTURNserverPassword`**
+Try to move different objects in front of the camera and see how well the classifier works! Predictions are displayed for all labels with values between 0 and 1, 1 being perfect prediction:
+
+![Shoes](images/12shoes.png)
+
 
 ## Additional Information
 
@@ -128,7 +127,11 @@ If you have access to a TURN server and you want your balenaCam devices to use i
   - media.peerconnection.enabled: true
   - media.peerconnection.ice.obfuscate_host_addresses: false
 
-## Supported Browsers
+If you wish to test the app in Balena local mode, you'll need to add your Edge Impulse Project ID and API Key in `edgeimpulse-inference/app/downloadWasm.sh`.
+
+BalenaCam advanced options are available in [this guide](BALENA-OPTIONS.md).
+
+## BalenaCam supported browsers
 
 - **Chrome** (but see note above)
 - **Firefox** (but see note above)
