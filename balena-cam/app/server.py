@@ -126,7 +126,7 @@ async def balena_logo(request):
     return web.Response(content_type='image/svg+xml', text=content)
 
 async def edgeimpulse_logo(request):
-    content = open(os.path.join(ROOT, 'client/edgeimpulse-logo.svg'), 'r').read()
+    content = open(os.path.join(ROOT, 'client/edgeimpulse-logo-white.png'), 'r').read()
     return web.Response(content_type='image/svg+xml', text=content)
 
 async def favicon(request):
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     app.router.add_get('/', index)
     app.router.add_get('/favicon.png', favicon)
     app.router.add_get('/balena-logo.svg', balena_logo)
-    app.router.add_get('/edgeimpulse-logo.svg', edgeimpulse_logo)
+    app.router.add_get('/edgeimpulse-logo-white.png', edgeimpulse_logo)
     app.router.add_get('/balena-cam.svg', balena)
     app.router.add_get('/client.js', javascript)
     app.router.add_get('/style.css', stylesheet)

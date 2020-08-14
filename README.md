@@ -12,7 +12,7 @@ This project is based on the great [BalenaCam project](https://github.com/balena
 
 * Raspberry Pi (v3 and v4 tested)
 * [Raspberry Pi camera](https://www.raspberrypi.org/products/camera-module-v2/)
-* A mobile phone to capture image samples 
+* A mobile phone to capture image samples; or a collection of jpg files as an alternative
 * Sign up for a free [Edge Impulse account](https://edgeimpulse.com/)
 * Sign up for a free [BalenaCloud account](https://www.balena.io/)
 
@@ -21,6 +21,8 @@ This project is based on the great [BalenaCam project](https://github.com/balena
 In this tutorial we'll build a model that can distinguish between different type of shoes: flip flops, sneakers or running shoes. 
 
 ### Data collection
+
+> _Note_: if you don't have a smartphone or already have a dataset of jpg files, you can use the [Edge Impulse Uploader](https://docs.edgeimpulse.com/docs/cli-uploader) to add images to your project.
 
 Head to your Edge Impulse project and add your mobile phone as a device to start capturing images:
 
