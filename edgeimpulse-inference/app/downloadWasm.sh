@@ -11,3 +11,6 @@ curl --request GET \
   --header "accept: application/zip" \
   --header "x-api-key: $EI_API_KEY" --output wasm.zip && \
   unzip -o wasm.zip && rm wasm.zip
+
+# default WASM classifier will be loaded if curl request fails
+exit 0
