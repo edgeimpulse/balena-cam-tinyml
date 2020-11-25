@@ -14,7 +14,7 @@ data:
     - BALENA_HOST_CONFIG_gpu_mem_256: 192
     - BALENA_HOST_CONFIG_gpu_mem_512: 256
     - BALENA_HOST_CONFIG_gpu_mem_1024: 448
-  defaultDeviceType: "raspberrypi3"
+  defaultDeviceType: "raspberrypi4-64"
   supportedDeviceTypes:
     - "raspberrypi3"
     - "raspberrypi4-64"
