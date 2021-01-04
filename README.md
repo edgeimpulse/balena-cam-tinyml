@@ -11,6 +11,7 @@ This project is based on the great [BalenaCam project](https://github.com/balena
 ## Requirements
 
 * Raspberry Pi (v3 and v4 tested)
+* balenaFin (v1.0 tested)
 * [Raspberry Pi camera](https://www.raspberrypi.org/products/camera-module-v2/)
 * A mobile phone to capture image samples; or a collection of jpg files as an alternative
 * Sign up for a free [Edge Impulse account](https://edgeimpulse.com/)
