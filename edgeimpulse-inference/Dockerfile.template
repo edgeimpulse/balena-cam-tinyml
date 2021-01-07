@@ -3,6 +3,10 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-node:build
 
 # Install build tools and remove layer cache afterwards
 #RUN install_packages git python make gcc g++ libvips-dev
+# Install dependencies
+RUN apt-get update && \
+  apt-get install -yq unzip \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 
