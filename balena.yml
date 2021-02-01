@@ -1,21 +1,23 @@
-version: "2"
-slug: "edge-impulse"
-name: "Edge Impulse + balenaCam"
+name: "Image classification"
 type: "sw.application"
+description: "Image classification on Raspberry Pi powered by balena and Edge Impulse Machine Learning."
 assets:
-  - url: "https://github.com/edgeimpulse/balena-cam-tinyml"
-    name: "repository"
-  - url: "https://raw.githubusercontent.com/edgeimpulse/balena-cam-tinyml/master/logo.png"
-    name: "logo"
+  repository:
+    type: "blob.asset"
+    data:
+      url: "https://github.com/edgeimpulse/balena-cam-tinyml"
+  logo:
+    type: "blob.asset"
+    data:
+      url: "https://raw.githubusercontent.com/edgeimpulse/balena-cam-tinyml/master/logo.png"
 data:
-  description: "Image classification on Raspberry Pi powered by balena and Edge Impulse."
   applicationConfigVariables:
     - BALENA_HOST_CONFIG_start_x: 1
     - BALENA_HOST_CONFIG_gpu_mem_256: 192
     - BALENA_HOST_CONFIG_gpu_mem_512: 256
     - BALENA_HOST_CONFIG_gpu_mem_1024: 448
   defaultDeviceType: "raspberrypi4-64"
-  supportedDeviceTypes:
+  supportedDeviceTypes:    
     - "raspberrypi3"
     - "raspberrypi4-64"
     - "fincm3"
